@@ -7,11 +7,9 @@ use std::env::var;
 use std::fs::File;
 use std::io::BufReader;
 use std::{net::SocketAddr, sync::Arc};
-mod ai;
 
 fn load_certificate_and_key() -> Result<(CertificateDer<'static>, PrivateKeyDer<'static>)> {
-    ai::main();
-    return Ok((CertificateDer::from(vec![]), PrivateKeyDer::from(vec![])));
+    
     let cert_path: String = var("CERT_PATH")?;
     let key_path: String = var("KEY_PATH")?;
 
