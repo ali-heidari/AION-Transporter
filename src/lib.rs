@@ -1,7 +1,6 @@
 mod multicast;
 
 use anyhow::{Ok, Result, anyhow};
-use dotenv::dotenv;
 use quinn::crypto::rustls::QuicServerConfig;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 use rustls_pemfile::{read_one, Item};
@@ -58,12 +57,11 @@ pub async fn start_listener(broadcast_type:BroadcastType) -> Result<()> {
         multicast::listen(on_data_received);
     }
     else{
-         start_quick();
+         start_quic();
     }
     Ok(())
 }
-pub async fn start_quick() -> Result<()> {
-    dotenv().ok();
+pub async fn start_quic() -> Result<()> {
 
     rustls::crypto::ring::default_provider()
         .install_default()

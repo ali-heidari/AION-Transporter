@@ -11,4 +11,3 @@ anyhow = "1.0"
 tracing = "0.1"
 rustls = { version="0.23", features=["ring"]}
 rustls-pemfile = "1.0"
-dotenv = "0.15.0"
