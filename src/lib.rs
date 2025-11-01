@@ -1,6 +1,6 @@
 mod multicast;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Ok, Result, anyhow};
 use dotenv::dotenv;
 use quinn::crypto::rustls::QuicServerConfig;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
@@ -10,6 +10,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::{net::SocketAddr, sync::Arc};
 
+#[derive(PartialEq)]
 pub enum BroadcastType{
     LAN,
     AI
@@ -47,13 +48,21 @@ fn load_certificate_and_key() -> Result<(CertificateDer<'static>, PrivateKeyDer<
     Ok((cert_der, key_der))
 }
 
+fn on_data_received(address: SocketAddr, data: &[u8]){
+    todo!()
+}
+
 
 pub async fn start_listener(broadcast_type:BroadcastType) -> Result<()> {
-    if broadcast_type== BroadcastType::LAN{
-        return multicast::listen();
+    if broadcast_type == BroadcastType::LAN{
+        multicast::listen(on_data_received);
     }
+    else{
+         start_quick();
+    }
+    Ok(())
 }
-pub async fn start_listener() -> Result<()> {
+pub async fn start_quick() -> Result<()> {
     dotenv().ok();
 
     rustls::crypto::ring::default_provider()
