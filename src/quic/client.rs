@@ -1,15 +1,15 @@
 use anyhow::{Result, anyhow};
 use quinn::crypto::rustls::QuicClientConfig;
-use rustls::pki_types::{CertificateDer, UnixTime, ServerName};
+use rustls::pki_types::{CertificateDer, ServerName, UnixTime};
 use std::sync::Arc;
 
-pub async fn send(message:&[u8]) -> Result<()> {
+pub async fn send(ip: &str, port: u32, message: &[u8]) -> Result<()> {
     rustls::crypto::ring::default_provider()
         .install_default()
         .expect("Failed to install ring crypto provider");
 
     let rustls_cfg = rustls::ClientConfig::builder()
-        .dangerous() 
+        .dangerous()
         .with_custom_certificate_verifier(Arc::new(NoCertificateVerification))
         .with_no_client_auth();
 
@@ -19,9 +19,11 @@ pub async fn send(message:&[u8]) -> Result<()> {
     let mut endpoint = quinn::Endpoint::client("0.0.0.0:0".parse().unwrap())?;
     endpoint.set_default_client_config(client_config);
 
-    println!("Connecting to QUIC server at 127.0.0.1:4433...");
     let connection = endpoint
-        .connect("127.0.0.1:4433".parse().unwrap(), "localhost")?
+        .connect(
+            (ip.to_owned() + ":" + port.to_string().as_str()).parse().unwrap(),
+            "localhost",
+        )?
         .await
         .map_err(|e| anyhow!("connection failed: {}", e))?;
 
@@ -39,9 +41,9 @@ pub async fn send(message:&[u8]) -> Result<()> {
 }
 
 // === Custom certificate verifier for local testing ===
-use rustls::client::danger::{ServerCertVerifier, ServerCertVerified};
-use rustls::{DigitallySignedStruct, SignatureScheme};
 use rustls::Error as RustlsError;
+use rustls::client::danger::{ServerCertVerified, ServerCertVerifier};
+use rustls::{DigitallySignedStruct, SignatureScheme};
 
 #[derive(Debug)]
 struct NoCertificateVerification;
@@ -77,6 +79,9 @@ impl ServerCertVerifier for NoCertificateVerification {
     }
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
-        vec![SignatureScheme::RSA_PSS_SHA256, SignatureScheme::ECDSA_NISTP256_SHA256]
+        vec![
+            SignatureScheme::RSA_PSS_SHA256,
+            SignatureScheme::ECDSA_NISTP256_SHA256,
+        ]
     }
 }
