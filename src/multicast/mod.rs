@@ -1,9 +1,12 @@
-use std::{net::{Ipv4Addr, SocketAddr, SocketAddrV4}, time::Duration};
+use std::{
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
+    time::Duration,
+};
 use tokio::net::UdpSocket;
 
 pub async fn listen<F>(on_data_received: F) -> std::io::Result<()>
 where
-    F: Fn(SocketAddr, &[u8]),
+    F: AsyncFn(SocketAddr, &[u8]),
 {
     // Bind to port 9999 on all interfaces
     let socket = UdpSocket::bind("0.0.0.0:9999").await?;
@@ -19,11 +22,11 @@ where
         let (len, src) = socket.recv_from(&mut buf).await?;
         let data = &buf[..len];
 
-        on_data_received(src,data);
+        on_data_received(src, data).await;
     }
 }
 
-async fn send() -> std::io::Result<()> {
+pub async fn send(message: &str) -> std::io::Result<()> {
     // Multicast address and port
     let multicast_addr = Ipv4Addr::new(239, 255, 255, 250);
     let port = 9999;
@@ -32,15 +35,12 @@ async fn send() -> std::io::Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:0").await?;
 
     // Message to broadcast
-    let message = b"Hello, agents!";
+    let message = message.as_bytes();
 
     // Destination socket
     let dest = SocketAddrV4::new(multicast_addr, port);
 
-    loop {
-        socket.send_to(message, dest).await?;
-        println!("Sent message to {}", dest);
-        std::thread::sleep(Duration::from_secs(2));
-    }
-}
+    socket.send_to(message, dest).await?;
 
+    Ok(())
+}

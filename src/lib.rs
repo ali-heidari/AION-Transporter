@@ -1,22 +1,21 @@
-mod multicast;
+pub mod multicast;
 
 use anyhow::{Ok, Result, anyhow};
 use quinn::crypto::rustls::QuicServerConfig;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
-use rustls_pemfile::{read_one, Item};
+use rustls_pemfile::{Item, read_one};
 use std::env::var;
 use std::fs::File;
 use std::io::BufReader;
 use std::{net::SocketAddr, sync::Arc};
 
 #[derive(PartialEq)]
-pub enum BroadcastType{
+pub enum BroadcastType {
     LAN,
-    AI
+    AI,
 }
 
 fn load_certificate_and_key() -> Result<(CertificateDer<'static>, PrivateKeyDer<'static>)> {
-    
     let cert_path: String = var("CERT_PATH")?;
     let key_path: String = var("KEY_PATH")?;
 
@@ -40,29 +39,22 @@ fn load_certificate_and_key() -> Result<(CertificateDer<'static>, PrivateKeyDer<
         _ => {
             return Err(anyhow!(
                 "failed to parse private key as RSA, ECDSA, or EdDSA"
-            ))
+            ));
         }
     };
 
     Ok((cert_der, key_der))
 }
 
-fn on_data_received(address: SocketAddr, data: &[u8]){
+fn on_data_received(address: SocketAddr, data: &[u8]) {
     todo!()
 }
 
+pub async fn start_listener(broadcast_type: BroadcastType) -> Result<()> {
 
-pub async fn start_listener(broadcast_type:BroadcastType) -> Result<()> {
-    if broadcast_type == BroadcastType::LAN{
-        multicast::listen(on_data_received);
-    }
-    else{
-         start_quic();
-    }
     Ok(())
 }
 pub async fn start_quic() -> Result<()> {
-
     rustls::crypto::ring::default_provider()
         .install_default()
         .map_err(|e| anyhow!("failed to install crypto provider: {:?}", e))?;
@@ -85,8 +77,8 @@ pub async fn start_quic() -> Result<()> {
     while let Some(incoming) = endpoint.accept().await {
         tokio::spawn(async move {
             match incoming.await {
-                Ok(conn) => {
-                    println!("connection established from {}", conn.remote_address());
+                std::result::Result::Ok(conn) => {
+                    // Changed from Some(conn) to Ok(conn)                    println!("connection established from {}", conn.remote_address());
                     if let Err(e) = handle_connection(conn).await {
                         eprintln!("connection error: {e}");
                     }
@@ -103,7 +95,7 @@ async fn handle_connection(conn: quinn::Connection) -> Result<()> {
     loop {
         // accept a bi-directional stream initiated by client
         let stream = match conn.accept_bi().await {
-            Ok(s) => s,
+            std::result::Result::Ok(s) => s,
             Err(quinn::ConnectionError::ApplicationClosed { .. }) => {
                 println!("remote closed connection");
                 return Ok(());
@@ -115,7 +107,7 @@ async fn handle_connection(conn: quinn::Connection) -> Result<()> {
             let (mut send, mut recv) = stream;
             // read all bytes (bounded to 64KiB here)
             let data = match recv.read_to_end(64 * 1024).await {
-                Ok(d) => d,
+                std::result::Result::Ok(d) => d,
                 Err(e) => {
                     eprintln!("read error: {}", e);
                     return;
