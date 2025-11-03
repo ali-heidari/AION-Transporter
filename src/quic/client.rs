@@ -3,7 +3,7 @@ use quinn::crypto::rustls::QuicClientConfig;
 use rustls::pki_types::{CertificateDer, ServerName, UnixTime};
 use std::sync::Arc;
 
-pub async fn send(ip: &str, port: u32, message: &[u8]) -> Result<()> {
+pub async fn send(ip: &str, port: u32, message: &[u8]) -> Result<Vec<u8>> {
     let rustls_cfg = rustls::ClientConfig::builder()
         .dangerous()
         .with_custom_certificate_verifier(Arc::new(NoCertificateVerification))
@@ -17,23 +17,21 @@ pub async fn send(ip: &str, port: u32, message: &[u8]) -> Result<()> {
 
     let connection = endpoint
         .connect(
-            (ip.to_owned() + ":" + port.to_string().as_str()).parse().unwrap(),
+            (ip.to_owned() + ":" + port.to_string().as_str())
+                .parse()
+                .unwrap(),
             "localhost",
         )?
         .await
         .map_err(|e| anyhow!("connection failed: {}", e))?;
 
-    println!("Connected to {}", connection.remote_address());
-
     let (mut send, mut recv) = connection.open_bi().await?;
     send.write_all(message).await?;
-    send.finish()?; // <- NOT async
-    println!("Sent: {}", String::from_utf8_lossy(message));
+    send.finish()?;
 
     let response = recv.read_to_end(64 * 1024).await?;
-    println!("Received echo: {}", String::from_utf8_lossy(&response));
 
-    Ok(())
+    Ok(response)
 }
 
 // === Custom certificate verifier for local testing ===
