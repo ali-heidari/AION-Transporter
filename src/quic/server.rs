@@ -38,10 +38,6 @@ fn load_certificate_and_key() -> Result<(CertificateDer<'static>, PrivateKeyDer<
     Ok((cert_der, key_der))
 }
 pub async fn start_quic(port: u32) -> Result<()> {
-    rustls::crypto::ring::default_provider()
-        .install_default()
-        .map_err(|e| anyhow!("failed to install crypto provider: {:?}", e))?;
-
     let (cert_der, key) = load_certificate_and_key()?;
     let rustls_cfg = rustls::ServerConfig::builder()
         .with_no_client_auth()

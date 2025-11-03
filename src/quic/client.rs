@@ -1,14 +1,9 @@
 use anyhow::{Result, anyhow};
 use quinn::crypto::rustls::QuicClientConfig;
-use rustls::crypto::aws_lc_rs;
 use rustls::pki_types::{CertificateDer, ServerName, UnixTime};
 use std::sync::Arc;
 
 pub async fn send(ip: &str, port: u32, message: &[u8]) -> Result<()> {
-    aws_lc_rs::default_provider()
-        .install_default()
-        .expect("Failed to install AWS-LC-RS crypto provider");
-
     let rustls_cfg = rustls::ClientConfig::builder()
         .dangerous()
         .with_custom_certificate_verifier(Arc::new(NoCertificateVerification))
@@ -22,9 +17,7 @@ pub async fn send(ip: &str, port: u32, message: &[u8]) -> Result<()> {
 
     let connection = endpoint
         .connect(
-            (ip.to_owned() + ":" + port.to_string().as_str())
-                .parse()
-                .unwrap(),
+            (ip.to_owned() + ":" + port.to_string().as_str()).parse().unwrap(),
             "localhost",
         )?
         .await
