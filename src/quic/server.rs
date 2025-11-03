@@ -37,7 +37,10 @@ fn load_certificate_and_key() -> Result<(CertificateDer<'static>, PrivateKeyDer<
 
     Ok((cert_der, key_der))
 }
-pub async fn start_quic(port: u32) -> Result<()> {
+pub async fn start_quic<F>(port: u32, on_message_received: F) -> Result<()>
+where
+    F: Fn(String),
+{
     let (cert_der, key) = load_certificate_and_key()?;
     let rustls_cfg = rustls::ServerConfig::builder()
         .with_no_client_auth()
@@ -46,27 +49,30 @@ pub async fn start_quic(port: u32) -> Result<()> {
     let quic_crypto = QuicServerConfig::try_from(rustls_cfg)?;
     let server_config = quinn::ServerConfig::with_crypto(Arc::new(quic_crypto));
 
-    let listen: SocketAddr = ("0.0.0.0:".to_owned() + port.to_string().as_str()).parse().unwrap();
+    let listen: SocketAddr = ("0.0.0.0:".to_owned() + port.to_string().as_str())
+        .parse()
+        .unwrap();
     let endpoint = quinn::Endpoint::server(server_config, listen)?;
     println!("QUIC server listening on {}", endpoint.local_addr()?);
 
     while let Some(incoming) = endpoint.accept().await {
-        tokio::spawn(async move {
             match incoming.await {
                 std::result::Result::Ok(conn) => {
-                    if let Err(e) = handle_connection(conn).await {
+                    if let Err(e) = handle_connection(conn, &on_message_received).await {
                         eprintln!("connection error: {e}");
                     }
                 }
                 Err(e) => eprintln!("incoming connection failed: {e}"),
             }
-        });
     }
 
     Ok(())
 }
 
-async fn handle_connection(conn: quinn::Connection) -> Result<()> {
+async fn handle_connection<F>(conn: quinn::Connection, on_message_received: &F) -> Result<()>
+where
+    F: Fn(String),
+{
     loop {
         // accept a bi-directional stream initiated by client
         let stream = match conn.accept_bi().await {
@@ -78,20 +84,15 @@ async fn handle_connection(conn: quinn::Connection) -> Result<()> {
             Err(e) => return Err(anyhow!("accept_bi failed: {}", e)),
         };
 
-        tokio::spawn(async move {
-            let (mut send, mut recv) = stream;
-            let data = match recv.read_to_end(64 * 1024).await {
-                std::result::Result::Ok(d) => d,
-                Err(e) => {
-                    eprintln!("read error: {}", e);
-                    return;
-                }
-            };
-            if let Err(e) = send.write_all(&data).await {
-                eprintln!("write error: {}", e);
-                return;
+        let (mut send, mut recv) = stream;
+        let data = match recv.read_to_end(64 * 1024).await {
+            std::result::Result::Ok(d) => d,
+            Err(e) => {
+                eprintln!("read error: {}", e);
+                return Ok(());
             }
-            let _ = send.finish();
-        });
+        };
+        on_message_received(String::from_utf8(data).unwrap());
+        let _ = send.finish();
     }
 }
