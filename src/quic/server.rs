@@ -39,7 +39,7 @@ fn load_certificate_and_key() -> Result<(CertificateDer<'static>, PrivateKeyDer<
 }
 pub async fn start_quic<F>(port: u32, on_message_received: F) -> Result<()>
 where
-    F: Fn(String),
+    F: Fn(String, String),
 {
     let (cert_der, key) = load_certificate_and_key()?;
     let rustls_cfg = rustls::ServerConfig::builder()
@@ -56,14 +56,14 @@ where
     println!("QUIC server listening on {}", endpoint.local_addr()?);
 
     while let Some(incoming) = endpoint.accept().await {
-            match incoming.await {
-                std::result::Result::Ok(conn) => {
-                    if let Err(e) = handle_connection(conn, &on_message_received).await {
-                        eprintln!("connection error: {e}");
-                    }
+        match incoming.await {
+            std::result::Result::Ok(conn) => {
+                if let Err(e) = handle_connection(conn, &on_message_received).await {
+                    eprintln!("connection error: {e}");
                 }
-                Err(e) => eprintln!("incoming connection failed: {e}"),
             }
+            Err(e) => eprintln!("incoming connection failed: {e}"),
+        }
     }
 
     Ok(())
@@ -71,7 +71,7 @@ where
 
 async fn handle_connection<F>(conn: quinn::Connection, on_message_received: &F) -> Result<()>
 where
-    F: Fn(String),
+    F: Fn(String, String),
 {
     loop {
         // accept a bi-directional stream initiated by client
@@ -92,7 +92,10 @@ where
                 return Ok(());
             }
         };
-        on_message_received(String::from_utf8(data).unwrap());
+        on_message_received(
+            conn.remote_address().ip().to_string(),
+            String::from_utf8(data).unwrap(),
+        );
         let _ = send.finish();
     }
 }
