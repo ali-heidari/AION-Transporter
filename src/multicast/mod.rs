@@ -1,6 +1,5 @@
 use std::{
-    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
-    time::Duration,
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4}
 };
 use tokio::net::UdpSocket;
 
