@@ -1,6 +1,6 @@
-# AION-Transporter
+# Aixker-Transporter
 
-AION-Transporter is a high-performance Rust toolkit that provides  
+Aixker-Transporter is a high-performance Rust toolkit that provides  
 **CLI utilities for network transport**, including:
 
 - **Multicast sender & listener**
@@ -14,7 +14,7 @@ It is designed for experimentation, research, distributed systems prototyping, a
 ## ✨ Features
 
 ### 🔹 CLI Toolkit
-AION-Transporter ships as a CLI binary with multiple subcommands:
+Aixker-Transporter ships as a CLI binary with multiple subcommands:
 
 - `multicast-send` — send packets to a multicast group  
 - `multicast-listen` — listen to a multicast group  
@@ -36,15 +36,15 @@ AION-Transporter ships as a CLI binary with multiple subcommands:
 ## 🔧 Installation
 
 ```bash
-git clone https://github.com/ali-heidari/AION-Transporter
-cd AION-Transporter
+git clone https://github.com/ali-heidari/Aixker-Transporter
+cd Aixker-Transporter
 cargo build --release
 ````
 
 Binary will appear here:
 
 ```
-target/release/aion-transporter
+target/release/aixker-transporter
 ```
 
 ---
@@ -54,13 +54,13 @@ target/release/aion-transporter
 Run:
 
 ```bash
-aion-transporter --help
+aixker-transporter --help
 ```
 
 ### 🟣 Multicast Send
 
 ```bash
-aion-transporter multicast send \
+aixker-transporter multicast send \
     --addr 239.0.0.1 \
     --port 5000 \
     --message "hello world"
@@ -82,7 +82,7 @@ multicast::listen(on_multicast_message_received).await?,
 
 #### CLI
 ```bash
-aion-transporter multicast
+aixker-transporter multicast
 ```
 
 ---
@@ -103,7 +103,7 @@ start_quic(*port, on_quic_message_received).await?;
 
 #### CLI
 ```bash
-aion-transporter serve \
+aixker-transporter serve \
     --port 4433 \
     true
 ```
@@ -111,7 +111,7 @@ aion-transporter serve \
 ### QUIC Client
 
 ```bash
-aion-transporter quic-client \
+aixker-transporter quic-client \
     --server https://127.0.0.1:4433 \
     --message "ping"
 ```
@@ -121,7 +121,7 @@ aion-transporter quic-client \
 ## 🔐 Generate Self-Signed Certificate
 
 ```rust
-let (_pub, _cert) = aion_transporter::certificate::pem::default().unwrap();
+let (_pub, _cert) = aixker_transporter::certificate::pem::default().unwrap();
 ```
 
 This will generate:
