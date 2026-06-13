@@ -9,6 +9,8 @@ Aixker-Transporter is a high-performance Rust toolkit that provides
 
 It is designed for experimentation, research, distributed systems prototyping, and AI-native networking ideas.
 
+Agent instructions now live in [.agent/agent-instructions.md](.agent/agent-instructions.md) with support files under [.agent/base/](.agent/base/).
+
 ---
 
 ## ✨ Features
